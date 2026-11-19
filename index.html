@@ -92,6 +92,11 @@ for(let i=0;i<3;i++){const nozzle=new THREE.Mesh(new THREE.CylinderGeometry(.5,.
 // access stairs and boarding bridge
 for(let i=0;i<12;i++){box(4,.25,1.1,steel,-7,1+i*.55,-3-i*.8);box(.18,.6,1.1,orange,-9,1.2+i*.55,-3-i*.8);box(.18,.6,1.1,orange,-5,1.2+i*.55,-3-i*.8)}
 box(5,.5,12,dark,-7,8,-8);for(let z=-13;z<-2;z+=2)box(.1,1,.1,steel,-9.5,8.5,z);
+// Bright boarding waypoint: becomes active after the crew briefing
+const waypoint=new THREE.Group();waypoint.position.set(-7,0,-8);scene.add(waypoint);
+const waypointRing=new THREE.Mesh(new THREE.TorusGeometry(2.2,.12,10,48),mat(0xffc45c,.3,.2));waypointRing.rotation.x=Math.PI/2;waypointRing.position.y=.35;waypoint.add(waypointRing);
+const waypointBeam=new THREE.Mesh(new THREE.CylinderGeometry(.12,.65,8,16,1,true),new THREE.MeshBasicMaterial({color:0xffc45c,transparent:true,opacity:.28,side:THREE.DoubleSide}));waypointBeam.position.y=5;waypoint.add(waypointBeam);
+const waypointLight=new THREE.PointLight(0xffb84d,0,18);waypointLight.position.set(0,3,0);waypoint.add(waypointLight);
 // exterior launch pad, visible beyond hangar door
 const pad=box(48,1,25,mat(0x737d84),0,-.1,-83);for(let x=-18;x<=18;x+=9)box(2,1,2,steel,x,.5,-82);
 cylinder(2,3,34,dark,0,16,-95,24);cylinder(1.5,2,5,white,0,35,-95,24);box(1,10,18,steel,8,22,-95);box(12,.5,1,orange,3,17,-95);
@@ -148,7 +153,7 @@ function interact(){
  if(nearest.type==='crew'){
    if(!crewSpoken.has(nearest.index)){crewSpoken.add(nearest.index);crewBriefings++;notify(nearest.message+' Bilgilendirme: '+crewBriefings+'/3.');updateProgress();}
    else notify(nearest.message);
-   if(crewBriefings>=3&&missionStage===0){missionStage=1;setObjective('Mekik merdivenlerine git. Biniş izni verildi.');updateProgress();notify('GÖREV KONTROL: Personel brifingi tamamlandı. Mekik biniş izni verildi.');}
+   if(crewBriefings>=3&&missionStage===0){missionStage=1;setObjective('YENİ GÖREV: Sarı ışıklı biniş noktasına git ve E tuşuna bas.');updateProgress();notify('YENİ GÖREV AÇILDI! BİNİŞ İZNİ VERİLDİ. Sarı ışıklı merdiven noktasına git ve E tuşuna bas.');}
    return;
  }
  if(nearest.type==='shuttle'){
@@ -185,10 +190,13 @@ function animate(){requestAnimationFrame(animate);const dt=Math.min(clock.getDel
  nearest=null;let best=7;const crewLines=['Uçuş mühendisi: “Mekik neredeyse hazır. Görev ekibi seni bekliyor.”','Sistem uzmanı: “Ana sistemlerin tüm değerleri normal.”','Yer ekibi: “Dış bağlantıları son kez kontrol ediyoruz.”','Görev bilimcisi: “Hedefimiz, keşfettiğimiz her yerin çok ötesinde.”','Uçuş kontrol: “Derin Uzay Girişimi’ne hoş geldin.”','Mühendis: “Mekiği inceleyebilirsin. Biniş merdivenleri güney tarafta.”'];
  for(let i=0;i<people.length;i++){const p=people[i],d=Math.hypot(p.x-player.x,p.z-player.z);if(d<best){best=d;nearest={type:'crew',index:i,message:crewLines[i]};}}
  const shuttleD=Math.hypot(player.x+7,player.z+8);
- if(shuttleD<4){nearest={type:'shuttle',message:'Shuttle access stairs'};best=shuttleD;}
+ if(shuttleD<(missionStage>=1?6:4)){nearest={type:'shuttle',message:'Shuttle access stairs'};best=shuttleD;}
  if(boarded){const panelD=Math.hypot(player.x,player.z+38);if(panelD<5){nearest={type:'panel',message:'Cockpit control panel'};}}
  prompt.style.display=nearest&&!briefingOpen?'block':'none';
  if(prompt.style.display==='block') prompt.textContent=nearest.type==='crew'?'[ E ] SPEAK TO CREW':nearest.type==='shuttle'?'[ E ] BOARD SHUTTLE':'[ E ] INSPECT SYSTEMS';
+ waypoint.visible=missionStage===1;
+ waypoint.rotation.y+=dt*.45;waypointRing.position.y=.35+Math.sin(performance.now()*.004)*.12;
+ waypointLight.intensity=missionStage===1?2.5+Math.sin(performance.now()*.006)*.8:0;
  for(const p of people){p.phase+=dt;p.g.rotation.y=Math.sin(p.phase*.3)*.08}
  }
  renderer.render(scene,camera);
