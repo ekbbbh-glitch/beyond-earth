@@ -121,8 +121,25 @@ function updateProgress(){const p=document.getElementById('progressText');if(p)p
 
 const boot=document.getElementById('boot'),hud=document.getElementById('hud'),prompt=document.getElementById('prompt'),toast=document.getElementById('toast');
 function notify(t){toast.textContent=t;toast.style.display='block';clearTimeout(notify.timer);notify.timer=setTimeout(()=>toast.style.display='none',3200)}
-document.getElementById('start').onclick=()=>{started=true;boot.style.opacity='0';setTimeout(()=>boot.remove(),850);hud.style.display='block';document.getElementById('briefing').style.display='grid';briefingOpen=true;if(innerWidth>800)renderer.domElement.requestPointerLock?.();};
-document.getElementById('beginMission').onclick=()=>{document.getElementById('briefing').style.display='none';briefingOpen=false;notify('Görev başladı. Yakındaki personele yaklaş ve E tuşuna bas.');};
+function enterHangar(){
+ if(started)return;
+ started=true;boot.style.opacity='0';setTimeout(()=>boot.remove(),850);
+ hud.style.display='block';document.getElementById('briefing').style.display='grid';briefingOpen=true;
+}
+function beginMission(){
+ if(!started||!briefingOpen)return;
+ document.getElementById('briefing').style.display='none';briefingOpen=false;
+ notify('Görev başladı. Yakındaki personele yaklaş ve E tuşuna bas.');
+ if(innerWidth>800)renderer.domElement.requestPointerLock?.();
+}
+document.getElementById('start').addEventListener('click',enterHangar);
+document.getElementById('beginMission').addEventListener('click',beginMission);
+document.addEventListener('keydown',e=>{
+ if(e.code==='Enter'){
+  if(!started){e.preventDefault();enterHangar();}
+  else if(briefingOpen){e.preventDefault();beginMission();}
+ }
+});
 document.addEventListener('pointerlockchange',()=>locked=document.pointerLockElement===renderer.domElement);
 document.addEventListener('mousemove',e=>{if(locked){player.yaw-=e.movementX*.0022;player.pitch=Math.max(-1.25,Math.min(1.25,player.pitch-e.movementY*.0018));}});
 document.addEventListener('keydown',e=>{keys[e.code]=true;if(e.code==='KeyE'&&started)interact();});document.addEventListener('keyup',e=>keys[e.code]=false);
