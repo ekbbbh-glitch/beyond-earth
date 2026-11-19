@@ -19,6 +19,10 @@
 .news{border-top:1px solid #7da9c944;border-bottom:1px solid #7da9c944;padding:14px 0;margin:18px 0}.news b{display:block;color:#f0bd7d;font-size:10px;letter-spacing:.2em;margin-bottom:8px}.news div{font-size:12px;color:#d7e7f5;line-height:1.8}
 .brief-action{margin-top:20px;background:#c4e5ff;color:#071321;border:0;padding:14px 24px;font-weight:900;letter-spacing:.12em;cursor:pointer}
 .mission-progress{margin-top:8px;color:#8eb7d7;font-size:10px;letter-spacing:.08em}
+.ticker{position:absolute;top:72px;left:20px;right:20px;overflow:hidden;white-space:nowrap;background:#071321e8;border:1px solid #82bce944;padding:9px 12px;color:#b8d8f1;font-size:10px;letter-spacing:.1em;text-overflow:ellipsis}
+.news-screen{position:absolute;top:105px;left:50%;transform:translateX(-50%);width:min(520px,65vw);padding:10px 14px;background:#061321eF;border:1px solid #70b8e977;box-shadow:0 0 28px #3a9bd833;color:#d8edff;text-align:center;font-size:11px;line-height:1.6;pointer-events:none}
+.news-screen b{color:#ffc77b;letter-spacing:.16em;display:block;margin-bottom:3px}
+#missionAlert{position:absolute;top:30%;left:50%;transform:translateX(-50%);display:none;background:#091a2bea;border:1px solid #ffc45c;padding:16px 22px;color:#fff;text-align:center;font-weight:900;letter-spacing:.12em;box-shadow:0 0 35px #ffb84d66;max-width:90%;pointer-events:none}
 .top{position:absolute;top:18px;left:20px;right:20px;display:flex;justify-content:space-between;align-items:flex-start}
 .brand{font-size:13px;font-weight:900;letter-spacing:.22em}.brand small{display:block;color:#8da9c6;font-size:9px;letter-spacing:.28em;margin-top:4px}
 .status{text-align:right;font-size:10px;letter-spacing:.14em;color:#a9c3df;background:#07111dcc;border:1px solid #8db5dc44;padding:10px 14px}
@@ -39,7 +43,7 @@
 <div id="boot"><div class="panel"><h1 class="logo">BEYOND EARTH</h1><div class="sub">A NEW FRONTIER BEGINS</div><button id="start">ENTER THE HANGAR</button><div id="hint">W A S D — MOVE &nbsp; • &nbsp; MOUSE — LOOK<br> E — INTERACT &nbsp; • &nbsp; ESC — RELEASE MOUSE<br><br>AN ORIGINAL SPACE STORY BY RAGE GAME</div></div></div>
 <div id="hud">
  <div class="top"><div class="brand">BEYOND EARTH<small>RAGE GAME // FLIGHT OPERATIONS</small></div><div class="status">JOHNSON SPACE CENTER<br><span style="color:#72d4a6">● FACILITY ONLINE</span> &nbsp; | &nbsp; T-02:14:36</div></div>
- <div class="ticker">LIVE // GLOBAL SPACE NETWORK: DEEP SPACE INITIATIVE ENTERS FINAL PREPARATION PHASE &nbsp; • &nbsp; CREW REPORTS SHUTTLE SYSTEMS NOMINAL</div><div class="cross"></div><div id="prompt">[ E ] INTERACT</div><div id="toast"></div>
+ <div class="ticker">● CANLI UZAY HABERLERİ &nbsp; // &nbsp; DERİN UZAY GÖREVİ İÇİN GERİ SAYIM BAŞLADI &nbsp; • &nbsp; MEKİK MOTOR TESTLERİ TAMAMLANDI &nbsp; • &nbsp; KAYNAĞI BİLİNMEYEN SİNYAL ARAŞTIRILIYOR</div><div class="news-screen"><b>GLOBAL SPACE NETWORK — SON HABERLER</b><span id="liveNews">Mekik fırlatma hazırlıkları sürüyor. Görev ekibi hangarda.</span></div><div id="missionAlert"></div><div class="cross"></div><div id="prompt">[ E ] INTERACT</div><div id="toast"></div>
 <div id="briefing"><div class="brief-card"><div class="brief-kicker">RAGE GAME PRESENTS / STORY MODE</div><div class="brief-title">CHAPTER 01: THE FIRST FLIGHT</div><div class="brief-copy">Yıl 2049. İnsanlık, Güneş Sistemi'nin dışına ulaşmak için şimdiye kadarki en büyük uzay görevini hazırlıyor. Sen, BEYOND EARTH programına yeni katılan astronotsun. Amerikan uzay mekiği hangarda son kontrollerini bekliyor. Ancak görev dosyasında açıklanmayan bir şey var: Derin uzaydan gelen gizemli bir sinyal.</div><div class="news"><b>● SON DAKİKA — UZAY HABERLERİ</b><div>01 / İnsanlığın en uzun menzilli insanlı uçuşu için geri sayım başladı.<br>02 / Mekiğin ana motor testleri başarıyla tamamlandı.<br>03 / Görev kontrol, kaynağı bilinmeyen sinyal hakkında açıklama yapmadı.</div></div><div class="brief-copy"><b>İLK GÖREVİN:</b><br>Hangarda üç görev personeliyle konuş. Mekiğin hazırlık durumunu öğren. Ardından merdivenlerden mekik içine gir ve kokpitteki kontrol panelini etkinleştir.</div><button class="brief-action" id="beginMission">GÖREVE BAŞLA</button></div></div>
  <div class="bottom"><div class="objective"><b>GÖREV 01 / HANGAR BRİFİNGİ</b><span id="objectiveText">Üç görev personeliyle konuş.</span><div class="mission-progress" id="progressText">PERSONEL BİLGİLENDİRMESİ: 0 / 3</div></div><div class="status">SUIT STATUS: NOMINAL<br>MISSION: DEEP SPACE INITIATIVE</div></div>
  <div id="mobile"><div id="stick"><div id="nub"></div></div><div id="look"></div><button id="interact">E</button></div>
@@ -122,7 +126,13 @@ let briefingOpen=false;
 const objective=document.querySelector('.objective');
 const stageNames=['Explore the hangar and speak with the flight engineers.','Return to the shuttle access stairs. Boarding clearance granted.','Inspect the cockpit and prepare for launch.'];
 function setObjective(t){const el=document.getElementById('objectiveText');if(el)el.textContent=t;}
-function updateProgress(){const p=document.getElementById('progressText');if(p)p.textContent=missionStage===0?'PERSONEL BİLGİLENDİRMESİ: '+crewBriefings+' / 3':missionStage===1?'BİNİŞ İZNİ: VERİLDİ':missionStage===2?'MEKİK İÇİNDE: KOKPİT KONTROLÜ':'GÖREV DURUMU: '+(missionStage>=4?'BÖLÜM 1 TAMAMLANDI':'FIRLATMA HAZIRLIĞI');}
+function updateProgress(){
+ const p=document.getElementById('progressText');
+ const h=document.querySelector('.objective b');
+ if(p)p.textContent=missionStage===0?'PERSONEL BİLGİLENDİRMESİ: '+crewBriefings+' / 3':missionStage===1?'BİNİŞ İZNİ: VERİLDİ':missionStage===2?'MEKİK İÇİNDE: KOKPİT KONTROLÜ':'GÖREV DURUMU: '+(missionStage>=4?'BÖLÜM 1 TAMAMLANDI':'FIRLATMA HAZIRLIĞI');
+ if(h)h.textContent=missionStage===0?'GÖREV 01 / PERSONEL BRİFİNGİ':missionStage===1?'GÖREV 02 / MEKİĞE BİN':missionStage===2?'GÖREV 03 / KOKPİT KONTROLÜ':'GÖREV 04 / FIRLATMA';
+}
+function showMissionAlert(t){const a=document.getElementById('missionAlert');a.textContent=t;a.style.display='block';clearTimeout(showMissionAlert.timer);showMissionAlert.timer=setTimeout(()=>a.style.display='none',5500);}
 
 const boot=document.getElementById('boot'),hud=document.getElementById('hud'),prompt=document.getElementById('prompt'),toast=document.getElementById('toast');
 function notify(t){toast.textContent=t;toast.style.display='block';clearTimeout(notify.timer);notify.timer=setTimeout(()=>toast.style.display='none',3200)}
@@ -153,12 +163,12 @@ function interact(){
  if(nearest.type==='crew'){
    if(!crewSpoken.has(nearest.index)){crewSpoken.add(nearest.index);crewBriefings++;notify(nearest.message+' Bilgilendirme: '+crewBriefings+'/3.');updateProgress();}
    else notify(nearest.message);
-   if(crewBriefings>=3&&missionStage===0){missionStage=1;setObjective('YENİ GÖREV: Sarı ışıklı biniş noktasına git ve E tuşuna bas.');updateProgress();notify('YENİ GÖREV AÇILDI! BİNİŞ İZNİ VERİLDİ. Sarı ışıklı merdiven noktasına git ve E tuşuna bas.');}
+   if(crewBriefings>=3&&missionStage===0){missionStage=1;setObjective('MEKİĞE BİN: Sarı ışıklı biniş alanına git. Merdivenlerin dibinde E tuşuna bas.');updateProgress();showMissionAlert('GÖREV 02 AÇILDI — MEKİĞE BİN');document.getElementById('liveNews').textContent='Son dakika: Astronot ekibine mekik biniş izni verildi.';notify('GÖREV 02: MEKİĞE BİN. Sarı ışıklı merdiven alanına git ve E tuşuna bas.');}
    return;
  }
  if(nearest.type==='shuttle'){
    if(missionStage<1){notify('FLIGHT CONTROL: Boarding is locked. Speak with at least three crew members first.');return;}
-   if(!boarded){boarded=true;missionStage=2;player.x=0;player.z=-34;player.yaw=Math.PI;player.pitch=0;setObjective('Kokpitteki kontrol paneline yaklaş ve E tuşuna bas.');updateProgress();notify('Mekiğe bindin. Kokpite hoş geldin.');}
+   if(!boarded){boarded=true;missionStage=2;player.x=0;player.z=-34;player.yaw=0;player.pitch=0;setObjective('KOKPİT KONTROLÜ: Önündeki kontrol paneline yaklaş ve E tuşuna bas.');updateProgress();showMissionAlert('MEKİĞE GİRİŞ BAŞARILI — KOKPİT KONTROLÜ');document.getElementById('liveNews').textContent='Canlı yayın: Astronot mekik kokpitine ulaştı. Fırlatma kontrolleri başlıyor.';notify('Mekiğe bindin. Önündeki kontrol paneline yaklaş ve E tuşuna bas.');}
    else notify('Flight deck systems are awaiting pre-launch checks.');
    return;
  }
@@ -190,10 +200,10 @@ function animate(){requestAnimationFrame(animate);const dt=Math.min(clock.getDel
  nearest=null;let best=7;const crewLines=['Uçuş mühendisi: “Mekik neredeyse hazır. Görev ekibi seni bekliyor.”','Sistem uzmanı: “Ana sistemlerin tüm değerleri normal.”','Yer ekibi: “Dış bağlantıları son kez kontrol ediyoruz.”','Görev bilimcisi: “Hedefimiz, keşfettiğimiz her yerin çok ötesinde.”','Uçuş kontrol: “Derin Uzay Girişimi’ne hoş geldin.”','Mühendis: “Mekiği inceleyebilirsin. Biniş merdivenleri güney tarafta.”'];
  for(let i=0;i<people.length;i++){const p=people[i],d=Math.hypot(p.x-player.x,p.z-player.z);if(d<best){best=d;nearest={type:'crew',index:i,message:crewLines[i]};}}
  const shuttleD=Math.hypot(player.x+7,player.z+8);
- if(shuttleD<(missionStage>=1?6:4)){nearest={type:'shuttle',message:'Shuttle access stairs'};best=shuttleD;}
- if(boarded){const panelD=Math.hypot(player.x,player.z+38);if(panelD<5){nearest={type:'panel',message:'Cockpit control panel'};}}
+ if(missionStage===1&&shuttleD<9){nearest={type:'shuttle',message:'Mekik biniş merdivenleri'};best=shuttleD;}
+ if(boarded){const panelD=Math.hypot(player.x,player.z+38);if(panelD<7){nearest={type:'panel',message:'Kokpit kontrol paneli'};best=panelD;}}
  prompt.style.display=nearest&&!briefingOpen?'block':'none';
- if(prompt.style.display==='block') prompt.textContent=nearest.type==='crew'?'[ E ] SPEAK TO CREW':nearest.type==='shuttle'?'[ E ] BOARD SHUTTLE':'[ E ] INSPECT SYSTEMS';
+ if(prompt.style.display==='block') prompt.textContent=nearest.type==='crew'?'[ E ] GÖREVLİYLE KONUŞ':nearest.type==='shuttle'?'[ E ] MEKİĞE BİN':'[ E ] KONTROL PANELİNİ ETKİNLEŞTİR';
  waypoint.visible=missionStage===1;
  waypoint.rotation.y+=dt*.45;waypointRing.position.y=.35+Math.sin(performance.now()*.004)*.12;
  waypointLight.intensity=missionStage===1?2.5+Math.sin(performance.now()*.006)*.8:0;
