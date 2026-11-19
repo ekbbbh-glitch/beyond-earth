@@ -101,13 +101,35 @@ const people=[];
 function person(x,z,shirt=0x354b60){const g=new THREE.Group();scene.add(g);g.position.set(x,0,z);const torso=new THREE.Mesh(new THREE.BoxGeometry(.65,1,.35),mat(shirt));torso.position.y=1.25;g.add(torso);const head=new THREE.Mesh(new THREE.SphereGeometry(.24,16,12),mat(0xd4b69a));head.position.y=1.95;g.add(head);const helmet=new THREE.Mesh(new THREE.SphereGeometry(.29,16,12,0,Math.PI*2,0,Math.PI*.48),mat(0xcbd8e1,.25,.3));helmet.position.y=2.02;g.add(helmet);for(let s of [-1,1]){const arm=new THREE.Mesh(new THREE.BoxGeometry(.2,.8,.22),mat(shirt));arm.position.set(s*.43,1.3,0);arm.rotation.z=s*.12;g.add(arm);const leg=new THREE.Mesh(new THREE.BoxGeometry(.24,.8,.28),dark);leg.position.set(s*.18,.42,0);g.add(leg)}people.push({g,x,z,phase:Math.random()*6});}
 person(-13,4,0x3c6179);person(13,3,0x4b5667);person(-18,-14,0x9a572d);person(17,-18,0x526c5e);person(5,17,0x43556e);person(-4,-34,0x3e6571);
 const player={x:0,z:18,yaw:0,pitch:0};let started=false,locked=false;const keys={};let nearest=null;
+let crewBriefings=0, boarded=false, missionStage=0;
+const crewSpoken=new Set();
+const objective=document.querySelector('.objective');
+const stageNames=['Explore the hangar and speak with the flight engineers.','Return to the shuttle access stairs. Boarding clearance granted.','Inspect the cockpit and prepare for launch.'];
+function setObjective(t){if(objective) objective.innerHTML='<b>CURRENT OBJECTIVE</b>'+t;}
+
 const boot=document.getElementById('boot'),hud=document.getElementById('hud'),prompt=document.getElementById('prompt'),toast=document.getElementById('toast');
 function notify(t){toast.textContent=t;toast.style.display='block';clearTimeout(notify.timer);notify.timer=setTimeout(()=>toast.style.display='none',3200)}
 document.getElementById('start').onclick=()=>{started=true;boot.style.opacity='0';setTimeout(()=>boot.remove(),850);hud.style.display='block';if(innerWidth>800)renderer.domElement.requestPointerLock?.();notify('Welcome aboard. The hangar is yours to explore.');};
 document.addEventListener('pointerlockchange',()=>locked=document.pointerLockElement===renderer.domElement);
 document.addEventListener('mousemove',e=>{if(locked){player.yaw-=e.movementX*.0022;player.pitch=Math.max(-1.25,Math.min(1.25,player.pitch-e.movementY*.0018));}});
 document.addEventListener('keydown',e=>{keys[e.code]=true;if(e.code==='KeyE'&&started)interact();});document.addEventListener('keyup',e=>keys[e.code]=false);
-function interact(){if(nearest){notify(nearest);return}notify('No nearby interaction. Walk closer to a crew member or the shuttle access stairs.')}
+function interact(){
+ if(!nearest){notify('No nearby interaction. Walk closer to a crew member or the shuttle access stairs.');return;}
+ if(nearest.type==='crew'){
+   if(!crewSpoken.has(nearest.index)){crewSpoken.add(nearest.index);crewBriefings++;notify(nearest.message+' Crew briefings: '+crewBriefings+'/3.');}
+   else notify(nearest.message);
+   if(crewBriefings>=3&&missionStage===0){missionStage=1;setObjective('Crew briefings complete. Return to the shuttle access stairs to begin boarding.');notify('FLIGHT CONTROL: Crew briefing complete. Shuttle boarding is now authorized.');}
+   return;
+ }
+ if(nearest.type==='shuttle'){
+   if(missionStage<1){notify('FLIGHT CONTROL: Boarding is locked. Speak with at least three crew members first.');return;}
+   if(!boarded){boarded=true;missionStage=2;player.x=0;player.z=-34;player.yaw=Math.PI;player.pitch=0;setObjective('You are inside the orbiter. Inspect the cockpit systems and prepare for launch.');notify('Boarding complete. Welcome to the flight deck.');}
+   else notify('Flight deck systems are awaiting pre-launch checks.');
+   return;
+ }
+ if(nearest.type==='panel'){notify('FLIGHT DECK: Main displays online. Navigation and propulsion checks are pending.');return;}
+ notify(nearest.message||'Interaction complete.');
+}
 document.getElementById('interact').onclick=interact;
 let stick={x:0,y:0};const st=document.getElementById('stick'),nub=document.getElementById('nub');let stOn=false;
 st.addEventListener('pointerdown',e=>{stOn=true;st.setPointerCapture(e.pointerId);moveStick(e)});st.addEventListener('pointermove',e=>{if(stOn)moveStick(e)});st.addEventListener('pointerup',()=>{stOn=false;stick={x:0,y:0};nub.style.left='37px';nub.style.top='37px'});
@@ -118,9 +140,13 @@ const clock=new THREE.Clock();
 function animate(){requestAnimationFrame(animate);const dt=Math.min(clock.getDelta(),.04);
  if(started){let f=(keys.KeyW?1:0)-(keys.KeyS?1:0)-stick.y;let s=(keys.KeyD?1:0)-(keys.KeyA?1:0)+stick.x;const len=Math.hypot(f,s);if(len>1){f/=len;s/=len}const speed=keys.ShiftLeft?8:4.2;player.x+= (Math.sin(player.yaw)*f+Math.cos(player.yaw)*s)*speed*dt;player.z+= (Math.cos(player.yaw)*f-Math.sin(player.yaw)*s)*speed*dt;player.x=clamp(player.x,-45,45);player.z=clamp(player.z,-62,31);
  camera.position.set(player.x,1.72,player.z);camera.rotation.order='YXZ';camera.rotation.y=player.yaw;camera.rotation.x=player.pitch;
- nearest=null;let best=4;for(let i=0;i<people.length;i++){const p=people[i],d=Math.hypot(p.x-player.x,p.z-player.z);if(d<best){best=d;nearest=['Flight engineer: “The shuttle is almost ready. The mission team is waiting for you.”','Systems specialist: “All primary systems are reading nominal.”','Ground crew: “We are checking the external service connections.”','Mission scientist: “Our destination is beyond anything we have explored.”','Flight controller: “Welcome to the Deep Space Initiative.”','Engineer: “The orbiter is yours to inspect.”'][i]}}
- const shuttleD=Math.hypot(player.x,player.z+8);if(shuttleD<4)nearest='Shuttle access: “Boarding operations are not yet cleared.”';
+ nearest=null;let best=4;const crewLines=['Flight engineer: “The shuttle is almost ready. The mission team is waiting for you.”','Systems specialist: “All primary systems are reading nominal.”','Ground crew: “We are checking the external service connections.”','Mission scientist: “Our destination is beyond anything we have explored.”','Flight controller: “Welcome to the Deep Space Initiative.”','Engineer: “The orbiter is yours to inspect.”'];
+ for(let i=0;i<people.length;i++){const p=people[i],d=Math.hypot(p.x-player.x,p.z-player.z);if(d<best){best=d;nearest={type:'crew',index:i,message:crewLines[i]};}}
+ const shuttleD=Math.hypot(player.x+7,player.z+8);
+ if(shuttleD<4){nearest={type:'shuttle',message:'Shuttle access stairs'};best=shuttleD;}
+ if(boarded){const panelD=Math.hypot(player.x,player.z+38);if(panelD<5){nearest={type:'panel',message:'Cockpit control panel'};}}
  prompt.style.display=nearest?'block':'none';
+ if(prompt.style.display==='block') prompt.textContent=nearest.type==='crew'?'[ E ] SPEAK TO CREW':nearest.type==='shuttle'?'[ E ] BOARD SHUTTLE':'[ E ] INSPECT SYSTEMS';
  for(const p of people){p.phase+=dt;p.g.rotation.y=Math.sin(p.phase*.3)*.08}
  }
  renderer.render(scene,camera);
