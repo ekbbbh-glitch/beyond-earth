@@ -138,7 +138,7 @@ function updateProgress(){
  const p=document.getElementById('progressText');
  const h=document.querySelector('.objective b');
  if(p)p.textContent=missionStage===0?'PERSONEL BİLGİLENDİRMESİ: '+crewBriefings+' / 3':missionStage===1?'BİNİŞ İZNİ: VERİLDİ':missionStage===2?'MEKİK İÇİNDE: KOKPİT KONTROLÜ':'GÖREV DURUMU: '+(missionStage>=4?'BÖLÜM 1 TAMAMLANDI':'FIRLATMA HAZIRLIĞI');
- if(h)h.textContent=missionStage===0?'GÖREV 01 / PERSONEL BRİFİNGİ':missionStage===1?'GÖREV 02 / MEKİĞE BİN':missionStage===2?'GÖREV 03 / KOKPİT KONTROLÜ':missionStage>=5?'GÖREV 05 / GİZEMLİ SİNYAL':'GÖREV 04 / FIRLATMA';
+ if(h)h.textContent=missionStage===0?'GÖREV 01 / PERSONEL BRİFİNGİ':missionStage===1?'GÖREV 02 / MEKİĞE BİN':missionStage===2?'GÖREV 03 / KOKPİT KONTROLÜ':missionStage>=8?'GÖREV 07 / MARS KEŞFİ':missionStage>=7?'GÖREV 06 / MARS’A İNİŞ':missionStage>=5?'GÖREV 05 / GİZEMLİ SİNYAL':'GÖREV 04 / FIRLATMA';
 }
 function showMissionAlert(t){const a=document.getElementById('missionAlert');a.textContent=t;a.style.display='block';clearTimeout(showMissionAlert.timer);showMissionAlert.timer=setTimeout(()=>a.style.display='none',5500);}
 
@@ -206,6 +206,10 @@ function interact(){
    if(missionStage<1){notify('FLIGHT CONTROL: Boarding is locked. Speak with at least three crew members first.');return;}
    if(!boarded){boarded=true;missionStage=2;nose.visible=true;belly.visible=true;shuttle.visible=true;player.x=0;player.z=-30;player.yaw=0;player.pitch=0;camera.position.set(0,5.3,-30);camera.lookAt(0,5.5,-42);setObjective('KOKPİT KONTROLÜ: Önündeki ışıklı konsola yaklaş ve E tuşuna bas.');updateProgress();showMissionAlert('MEKİĞE GİRİŞ BAŞARILI — KOKPİT KONTROLÜ');document.getElementById('liveNews').textContent='Canlı yayın: Astronot mekik kokpitinde. Fırlatma öncesi kontroller başladı.';notify('Kokpite yerleştin. Ön camdan hangarı görebilirsin. Işıklı konsola yaklaş ve E tuşuna bas.');}
    else notify('Flight deck systems are awaiting pre-launch checks.');
+   return;
+ }
+ if(nearest.type==='marsBeacon'){
+   if(missionStage===8){missionStage=9;setObjective('MARS KEŞFİ: Araştırma işaretçisi etkinleştirildi. Çevredeki yüzeyi ve kaya örneklerini incele.');updateProgress();showMissionAlert('MARS ARAŞTIRMA ALANI ETKİN');document.getElementById('liveNews').textContent='Mars yüzeyindeki ilk araştırma işaretçisi etkinleştirildi. Keşif çalışmaları başladı.';notify('İşaretçi tarandı. Mars keşfi başladı!');}
    return;
  }
  if(nearest.type==='panel'){
