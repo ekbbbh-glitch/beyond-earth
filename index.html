@@ -89,7 +89,10 @@ box(5,.5,12,dark,-7,8,-8);for(let z=-13;z<-2;z+=2)box(.1,1,.1,steel,-9.5,8.5,z);
 const pad=box(48,1,25,mat(0x737d84),0,-.1,-83);for(let x=-18;x<=18;x+=9)box(2,1,2,steel,x,.5,-82);
 cylinder(2,3,34,dark,0,16,-95,24);cylinder(1.5,2,5,white,0,35,-95,24);box(1,10,18,steel,8,22,-95);box(12,.5,1,orange,3,17,-95);
 // control room, mission displays
-box(14,5,1,dark,0,5,25);box(13,3.7,.2,black,0,5.6,24.4);
+box(14,5,1,dark,0,5,25);
+// Flight-deck instrument panel
+box(8,3,.45,dark,0,2.4,-40);box(7.4,2.35,.08,mat(0x102b3c,.3,.2),0,2.5,-40.28);
+for(let i=0;i<4;i++){box(1.35,.72,.08,mat([0x1c7790,0x397c67,0x8b6632,0x315b9b][i],.3,.2),-2.55+i*1.7,2.65,-40.36);}box(13,3.7,.2,black,0,5.6,24.4);
 function sign(text,x,y,z,color='#9ed6ff'){const c=document.createElement('canvas');c.width=1024;c.height=256;const ctx=c.getContext('2d');ctx.fillStyle='#081523';ctx.fillRect(0,0,1024,256);ctx.strokeStyle='#49718e';ctx.lineWidth=5;ctx.strokeRect(8,8,1008,240);ctx.fillStyle=color;ctx.font='bold 62px Arial';ctx.textAlign='center';ctx.fillText(text,512,150);const t=new THREE.CanvasTexture(c);const m=new THREE.MeshBasicMaterial({map:t});const p=new THREE.Mesh(new THREE.PlaneGeometry(9,2.25),m);p.position.set(x,y,z);scene.add(p)}
 sign('DEEP SPACE INITIATIVE',0,7.2,24.25);sign('FLIGHT OPERATIONS  //  MISSION CONTROL',0,11,24.2,'#f1b77c');
 for(let i=0;i<4;i++){box(2.4,1.1,1.1,dark,-5+i*3.3,1,20);box(2,.08,.05,mat(0x58b9d8),-5+i*3.3,1.8,19.4)}
@@ -127,7 +130,12 @@ function interact(){
    else notify('Flight deck systems are awaiting pre-launch checks.');
    return;
  }
- if(nearest.type==='panel'){notify('FLIGHT DECK: Main displays online. Navigation and propulsion checks are pending.');return;}
+ if(nearest.type==='panel'){
+   if(missionStage===2){missionStage=3;setObjective('Pre-flight checks complete. Hold position and watch the launch sequence.');notify('FLIGHT CONTROL: All systems green. Starting the launch countdown.');launchCountdown();}
+   else if(missionStage>=3)notify('Flight deck: Launch sequence in progress.');
+   else notify('FLIGHT DECK: Main displays online. Navigation and propulsion checks are pending.');
+   return;
+ }
  notify(nearest.message||'Interaction complete.');
 }
 document.getElementById('interact').onclick=interact;
@@ -136,9 +144,16 @@ st.addEventListener('pointerdown',e=>{stOn=true;st.setPointerCapture(e.pointerId
 function moveStick(e){const r=st.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2;let x=e.clientX-cx,y=e.clientY-cy,l=Math.hypot(x,y),m=38;if(l>m){x=x/l*m;y=y/l*m}stick={x:x/m,y:y/m};nub.style.left=(37+x)+'px';nub.style.top=(37+y)+'px'}
 const look=document.getElementById('look');let lookOn=false,last={x:0,y:0};look.addEventListener('pointerdown',e=>{lookOn=true;last={x:e.clientX,y:e.clientY};look.setPointerCapture(e.pointerId)});look.addEventListener('pointermove',e=>{if(lookOn){player.yaw-=(e.clientX-last.x)*.006;player.pitch=Math.max(-1.2,Math.min(1.2,player.pitch-(e.clientY-last.y)*.004));last={x:e.clientX,y:e.clientY}}});look.addEventListener('pointerup',()=>lookOn=false);
 function clamp(v,a,b){return Math.max(a,Math.min(b,v))}
+let launchStarted=false;
+function launchCountdown(){
+ if(launchStarted)return;launchStarted=true;
+ const steps=['T-10: Cabin pressure sealed.','T-8: Ground crew clear.','T-6: Main engines armed.','T-4: Ignition sequence initiated.','T-2: Hold on.','LIFTOFF — The orbiter is climbing!'];
+ let i=0;const run=()=>{if(i<steps.length){notify(steps[i]);i++;setTimeout(run,1800);}else{missionStage=4;setObjective('Chapter 1 complete. The shuttle has left the launch pad. Chapter 2: Earth orbit — coming next.');notify('BEYOND EARTH // CHAPTER 1: THE FIRST FLIGHT — COMPLETE');}};
+ run();
+}
 const clock=new THREE.Clock();
 function animate(){requestAnimationFrame(animate);const dt=Math.min(clock.getDelta(),.04);
- if(started){let f=(keys.KeyW?1:0)-(keys.KeyS?1:0)-stick.y;let s=(keys.KeyD?1:0)-(keys.KeyA?1:0)+stick.x;const len=Math.hypot(f,s);if(len>1){f/=len;s/=len}const speed=keys.ShiftLeft?8:4.2;player.x+= (Math.sin(player.yaw)*f+Math.cos(player.yaw)*s)*speed*dt;player.z+= (Math.cos(player.yaw)*f-Math.sin(player.yaw)*s)*speed*dt;player.x=clamp(player.x,-45,45);player.z=clamp(player.z,-62,31);
+ if(started){let f=(keys.KeyW?1:0)-(keys.KeyS?1:0)-stick.y;let s=(keys.KeyD?1:0)-(keys.KeyA?1:0)+stick.x;const len=Math.hypot(f,s);if(len>1){f/=len;s/=len}const speed=keys.ShiftLeft?8:4.2;player.x+= (-Math.sin(player.yaw)*f+Math.cos(player.yaw)*s)*speed*dt;player.z+= (-Math.cos(player.yaw)*f-Math.sin(player.yaw)*s)*speed*dt;player.x=clamp(player.x,-45,45);player.z=clamp(player.z,-62,31);
  camera.position.set(player.x,1.72,player.z);camera.rotation.order='YXZ';camera.rotation.y=player.yaw;camera.rotation.x=player.pitch;
  nearest=null;let best=4;const crewLines=['Flight engineer: “The shuttle is almost ready. The mission team is waiting for you.”','Systems specialist: “All primary systems are reading nominal.”','Ground crew: “We are checking the external service connections.”','Mission scientist: “Our destination is beyond anything we have explored.”','Flight controller: “Welcome to the Deep Space Initiative.”','Engineer: “The orbiter is yours to inspect.”'];
  for(let i=0;i<people.length;i++){const p=people[i],d=Math.hypot(p.x-player.x,p.z-player.z);if(d<best){best=d;nearest={type:'crew',index:i,message:crewLines[i]};}}
