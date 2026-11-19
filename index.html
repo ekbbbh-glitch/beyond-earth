@@ -138,7 +138,7 @@ function updateProgress(){
  const p=document.getElementById('progressText');
  const h=document.querySelector('.objective b');
  if(p)p.textContent=missionStage===0?'PERSONEL BİLGİLENDİRMESİ: '+crewBriefings+' / 3':missionStage===1?'BİNİŞ İZNİ: VERİLDİ':missionStage===2?'MEKİK İÇİNDE: KOKPİT KONTROLÜ':'GÖREV DURUMU: '+(missionStage>=4?'BÖLÜM 1 TAMAMLANDI':'FIRLATMA HAZIRLIĞI');
- if(h)h.textContent=missionStage===0?'GÖREV 01 / PERSONEL BRİFİNGİ':missionStage===1?'GÖREV 02 / MEKİĞE BİN':missionStage===2?'GÖREV 03 / KOKPİT KONTROLÜ':'GÖREV 04 / FIRLATMA';
+ if(h)h.textContent=missionStage===0?'GÖREV 01 / PERSONEL BRİFİNGİ':missionStage===1?'GÖREV 02 / MEKİĞE BİN':missionStage===2?'GÖREV 03 / KOKPİT KONTROLÜ':missionStage>=5?'GÖREV 05 / GİZEMLİ SİNYAL':'GÖREV 04 / FIRLATMA';
 }
 function showMissionAlert(t){const a=document.getElementById('missionAlert');a.textContent=t;a.style.display='block';clearTimeout(showMissionAlert.timer);showMissionAlert.timer=setTimeout(()=>a.style.display='none',5500);}
 
@@ -182,7 +182,7 @@ function interact(){
  }
  if(nearest.type==='panel'){
    if(missionStage===2){missionStage=3;setObjective('FIRLATMA: Sistem kontrolleri tamamlandı. Geri sayımı izle.');updateProgress();showMissionAlert('TÜM SİSTEMLER HAZIR — FIRLATMA İZNİ VERİLDİ');notify('GÖREV KONTROL: Tüm sistemler hazır. Fırlatma geri sayımı başlıyor.');launchCountdown();}
-   else if(missionStage>=3)notify('Flight deck: Launch sequence in progress.');
+   else if(missionStage===5){missionStage=6;setObjective('SİNYAL ANALİZİ: Derin uzaydan gelen sinyali çözümlüyorsun. Uçuş kontrolün yanıtını bekle.');updateProgress();showMissionAlert('YENİ GÖREV — GİZEMLİ SİNYAL');document.getElementById('liveNews').textContent='Uzay aracı, kaynağı bilinmeyen sinyalin tekrar eden bir örüntü taşıdığını doğruladı.';notify('Sinyal kaydedildi. Görev kontrol analiz sonuçlarını iletiyor...');}else if(missionStage>=3)notify('Flight deck: Launch sequence in progress.');
    else notify('FLIGHT DECK: Main displays online. Navigation and propulsion checks are pending.');
    return;
  }
