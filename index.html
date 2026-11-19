@@ -84,12 +84,20 @@ for(let x=-26;x<=26;x+=13){box(1.2,9,1.2,orange,x,4.5,-30);box(4,.5,4,dark,x,9.2
 const shuttle=new THREE.Group();scene.add(shuttle);shuttle.position.set(0,4,-22);shuttle.rotation.y=Math.PI;
 const fus=new THREE.Mesh(new THREE.CylinderGeometry(2.05,2.5,25,32,1,true),white);fus.rotation.x=Math.PI/2;fus.position.z=0;fus.castShadow=true;shuttle.add(fus);
 const nose=new THREE.Mesh(new THREE.ConeGeometry(2.05,6,32),white);nose.rotation.x=-Math.PI/2;nose.position.z=15.4;nose.castShadow=true;shuttle.add(nose);
+// Cockpit shell is double-sided so the astronaut can see the shuttle interior
+fus.material.side=THREE.DoubleSide;
 const belly=new THREE.Mesh(new THREE.CylinderGeometry(2.2,2.25,20,32),mat(0x252a30,.8));belly.rotation.x=Math.PI/2;belly.position.z=-1;belly.scale.set(1,.95,1);shuttle.add(belly);
 const wingGeo=new THREE.Shape();wingGeo.moveTo(0,0);wingGeo.lineTo(12,1);wingGeo.lineTo(23,-8);wingGeo.lineTo(5,-7);wingGeo.lineTo(0,0);
 const wing=new THREE.Mesh(new THREE.ExtrudeGeometry(wingGeo,{depth:.45,bevelEnabled:true,bevelSegments:2,steps:1,bevelSize:.15,bevelThickness:.15}),white);wing.position.set(1,1,-4);wing.rotation.x=-.08;wing.castShadow=true;shuttle.add(wing);
 const wing2=wing.clone();wing2.scale.x=-1;wing2.position.x=-1;shuttle.add(wing2);
 const tail=new THREE.Mesh(new THREE.BoxGeometry(.5,6,5),white);tail.position.set(0,4,-8);tail.rotation.x=-.25;shuttle.add(tail);
 for(let x of [-.85,.85]){const pod=new THREE.Mesh(new THREE.CylinderGeometry(.55,.7,13,20),mat(0xb8c1c8,.4,.5));pod.rotation.x=Math.PI/2;pod.position.set(x*2,1,-12);shuttle.add(pod)}
+// Cockpit interior: forward windshield, dashboard and illuminated flight instruments
+const cockpitGlass=new THREE.Mesh(new THREE.PlaneGeometry(3.55,1.9),new THREE.MeshPhysicalMaterial({color:0x75c9f4,roughness:.08,metalness:.18,transparent:true,opacity:.32,side:THREE.DoubleSide}));cockpitGlass.position.set(0,1.55,14.1);shuttle.add(cockpitGlass);
+const cockpitFrame=mat(0x263746,.45,.55);for(const x of [-1.85,1.85]){const post=new THREE.Mesh(new THREE.BoxGeometry(.16,2.1,.18),cockpitFrame);post.position.set(x,1.55,14.05);shuttle.add(post)}
+const dash=new THREE.Mesh(new THREE.BoxGeometry(4.1,.72,1.1),dark);dash.position.set(0,.45,10.8);shuttle.add(dash);
+for(let i=0;i<5;i++){const screen=new THREE.Mesh(new THREE.BoxGeometry(.62,.38,.06),mat([0x1a9cbd,0x43a87a,0x3372b9,0xc18a38,0x2d9aaf][i],.25,.2));screen.position.set(-1.55+i*.78,.9,10.35);shuttle.add(screen)}
+const pilotSeat=new THREE.Mesh(new THREE.BoxGeometry(1.15,1.6,.8),mat(0x202a35));pilotSeat.position.set(0,-.05,7.2);shuttle.add(pilotSeat);
 for(let x of [-1.15,-.38,.38,1.15]){const win=new THREE.Mesh(new THREE.BoxGeometry(.42,.12,.12),black);win.position.set(x,1.3,18.1);shuttle.add(win)}
 const nasaMark=new THREE.Mesh(new THREE.BoxGeometry(3,.04,1.1),mat(0x173e83));nasaMark.position.set(0,2,-2);shuttle.add(nasaMark);
 for(let i=0;i<3;i++){const nozzle=new THREE.Mesh(new THREE.CylinderGeometry(.5,.8,2.8,20),steel);nozzle.rotation.x=Math.PI/2;nozzle.position.set((i-1)*1.25,-1,-13);shuttle.add(nozzle)}
@@ -168,12 +176,12 @@ function interact(){
  }
  if(nearest.type==='shuttle'){
    if(missionStage<1){notify('FLIGHT CONTROL: Boarding is locked. Speak with at least three crew members first.');return;}
-   if(!boarded){boarded=true;missionStage=2;player.x=0;player.z=-34;player.yaw=0;player.pitch=0;setObjective('KOKPİT KONTROLÜ: Önündeki kontrol paneline yaklaş ve E tuşuna bas.');updateProgress();showMissionAlert('MEKİĞE GİRİŞ BAŞARILI — KOKPİT KONTROLÜ');document.getElementById('liveNews').textContent='Canlı yayın: Astronot mekik kokpitine ulaştı. Fırlatma kontrolleri başlıyor.';notify('Mekiğe bindin. Önündeki kontrol paneline yaklaş ve E tuşuna bas.');}
+   if(!boarded){boarded=true;missionStage=2;nose.visible=false;belly.visible=false;player.x=0;player.z=-30;player.yaw=0;player.pitch=0;camera.position.set(0,5.3,-30);camera.lookAt(0,5.5,-42);setObjective('KOKPİT KONTROLÜ: Önündeki ışıklı konsola yaklaş ve E tuşuna bas.');updateProgress();showMissionAlert('MEKİĞE GİRİŞ BAŞARILI — KOKPİT KONTROLÜ');document.getElementById('liveNews').textContent='Canlı yayın: Astronot mekik kokpitinde. Fırlatma öncesi kontroller başladı.';notify('Kokpite yerleştin. Ön camdan hangarı görebilirsin. Işıklı konsola yaklaş ve E tuşuna bas.');}
    else notify('Flight deck systems are awaiting pre-launch checks.');
    return;
  }
  if(nearest.type==='panel'){
-   if(missionStage===2){missionStage=3;setObjective('Fırlatma geri sayımını izle.');updateProgress();notify('GÖREV KONTROL: Tüm sistemler hazır. Fırlatma geri sayımı başlıyor.');launchCountdown();}
+   if(missionStage===2){missionStage=3;setObjective('FIRLATMA: Sistem kontrolleri tamamlandı. Geri sayımı izle.');updateProgress();showMissionAlert('TÜM SİSTEMLER HAZIR — FIRLATMA İZNİ VERİLDİ');notify('GÖREV KONTROL: Tüm sistemler hazır. Fırlatma geri sayımı başlıyor.');launchCountdown();}
    else if(missionStage>=3)notify('Flight deck: Launch sequence in progress.');
    else notify('FLIGHT DECK: Main displays online. Navigation and propulsion checks are pending.');
    return;
@@ -186,24 +194,27 @@ st.addEventListener('pointerdown',e=>{stOn=true;st.setPointerCapture(e.pointerId
 function moveStick(e){const r=st.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2;let x=e.clientX-cx,y=e.clientY-cy,l=Math.hypot(x,y),m=38;if(l>m){x=x/l*m;y=y/l*m}stick={x:x/m,y:y/m};nub.style.left=(37+x)+'px';nub.style.top=(37+y)+'px'}
 const look=document.getElementById('look');let lookOn=false,last={x:0,y:0};look.addEventListener('pointerdown',e=>{lookOn=true;last={x:e.clientX,y:e.clientY};look.setPointerCapture(e.pointerId)});look.addEventListener('pointermove',e=>{if(lookOn){player.yaw-=(e.clientX-last.x)*.006;player.pitch=Math.max(-1.2,Math.min(1.2,player.pitch-(e.clientY-last.y)*.004));last={x:e.clientX,y:e.clientY}}});look.addEventListener('pointerup',()=>lookOn=false);
 function clamp(v,a,b){return Math.max(a,Math.min(b,v))}
-let launchStarted=false;
+let launchStarted=false,launchAnimating=false,orbitMode=false,launchElapsed=0;
+const starGeo=new THREE.BufferGeometry();const starPos=[];for(let i=0;i<1400;i++){const v=new THREE.Vector3((Math.random()-.5)*900,(Math.random()-.5)*700,(Math.random()-.5)*900);starPos.push(v.x,v.y,v.z)}starGeo.setAttribute('position',new THREE.Float32BufferAttribute(starPos,3));const stars=new THREE.Points(starGeo,new THREE.PointsMaterial({color:0xffffff,size:1.15}));stars.visible=false;scene.add(stars);
+const earth=new THREE.Mesh(new THREE.SphereGeometry(72,48,32),new THREE.MeshStandardMaterial({color:0x1768a5,roughness:.85,metalness:0}));earth.position.set(0,120,-250);earth.visible=false;scene.add(earth);const cloudBand=new THREE.Mesh(new THREE.SphereGeometry(73,48,32),new THREE.MeshBasicMaterial({color:0x9acdf0,transparent:true,opacity:.16,wireframe:true}));cloudBand.position.copy(earth.position);cloudBand.visible=false;scene.add(cloudBand);
 function launchCountdown(){
  if(launchStarted)return;launchStarted=true;
  const steps=['T-10: Cabin pressure sealed.','T-8: Ground crew clear.','T-6: Main engines armed.','T-4: Ignition sequence initiated.','T-2: Hold on.','LIFTOFF — The orbiter is climbing!'];
- let i=0;const run=()=>{if(i<steps.length){notify(steps[i]);i++;setTimeout(run,1800);}else{missionStage=4;setObjective('Chapter 1 complete. The shuttle has left the launch pad. Chapter 2: Earth orbit — coming next.');notify('BEYOND EARTH // CHAPTER 1: THE FIRST FLIGHT — COMPLETE');}};
+ let i=0;const run=()=>{if(i<steps.length){notify(steps[i]);i++;setTimeout(run,1800);}else{missionStage=4;launchAnimating=true;launchElapsed=0;setObjective('MEKİK FIRLATILIYOR: Koltuğunda kal. Atmosferi geçiyoruz.');updateProgress();showMissionAlert('LIFTOFF — FIRLATMA GERÇEKLEŞTİ');document.getElementById('liveNews').textContent='SON DAKİKA: BEYOND EARTH mekiği fırlatma rampasından ayrıldı!';notify('Motorlar ateşlendi! Mekik yükseliyor...');}};
  run();
 }
 const clock=new THREE.Clock();
 function animate(){requestAnimationFrame(animate);const dt=Math.min(clock.getDelta(),.04);
  if(started){let f=(keys.KeyW?1:0)-(keys.KeyS?1:0)-stick.y;let s=(keys.KeyD?1:0)-(keys.KeyA?1:0)+stick.x;const len=Math.hypot(f,s);if(len>1){f/=len;s/=len}const speed=keys.ShiftLeft?8:4.2;player.x+= (-Math.sin(player.yaw)*f+Math.cos(player.yaw)*s)*speed*dt;player.z+= (-Math.cos(player.yaw)*f-Math.sin(player.yaw)*s)*speed*dt;player.x=clamp(player.x,-45,45);player.z=clamp(player.z,-62,31);
- camera.position.set(player.x,1.72,player.z);camera.rotation.order='YXZ';camera.rotation.y=player.yaw;camera.rotation.x=player.pitch;
+ if(!launchAnimating&&!orbitMode){camera.position.set(player.x,boarded?5.3:1.72,player.z);camera.rotation.order='YXZ';camera.rotation.y=player.yaw;camera.rotation.x=player.pitch;}
  nearest=null;let best=7;const crewLines=['Uçuş mühendisi: “Mekik neredeyse hazır. Görev ekibi seni bekliyor.”','Sistem uzmanı: “Ana sistemlerin tüm değerleri normal.”','Yer ekibi: “Dış bağlantıları son kez kontrol ediyoruz.”','Görev bilimcisi: “Hedefimiz, keşfettiğimiz her yerin çok ötesinde.”','Uçuş kontrol: “Derin Uzay Girişimi’ne hoş geldin.”','Mühendis: “Mekiği inceleyebilirsin. Biniş merdivenleri güney tarafta.”'];
  for(let i=0;i<people.length;i++){const p=people[i],d=Math.hypot(p.x-player.x,p.z-player.z);if(d<best){best=d;nearest={type:'crew',index:i,message:crewLines[i]};}}
  const shuttleD=Math.hypot(player.x+7,player.z+8);
  if(missionStage===1&&shuttleD<9){nearest={type:'shuttle',message:'Mekik biniş merdivenleri'};best=shuttleD;}
- if(boarded){const panelD=Math.hypot(player.x,player.z+38);if(panelD<7){nearest={type:'panel',message:'Kokpit kontrol paneli'};best=panelD;}}
+ if(boarded){const panelD=Math.hypot(player.x,player.z+33.5);if(panelD<5.5){nearest={type:'panel',message:'Kokpit kontrol paneli'};best=panelD;}}
  prompt.style.display=nearest&&!briefingOpen?'block':'none';
  if(prompt.style.display==='block') prompt.textContent=nearest.type==='crew'?'[ E ] GÖREVLİYLE KONUŞ':nearest.type==='shuttle'?'[ E ] MEKİĞE BİN':'[ E ] KONTROL PANELİNİ ETKİNLEŞTİR';
+ if(launchAnimating){launchElapsed+=dt;shuttle.position.y+=dt*9;shuttle.position.z-=dt*5.5;shuttle.rotation.x=Math.min(Math.PI/2,shuttle.rotation.x+dt*.18);const eye=shuttle.localToWorld(new THREE.Vector3(0,1.25,8));const lookAt=shuttle.localToWorld(new THREE.Vector3(0,1.45,19));camera.position.copy(eye);camera.lookAt(lookAt);if(launchElapsed>10){launchAnimating=false;orbitMode=true;scene.background=new THREE.Color(0x020713);scene.fog=null;stars.visible=true;earth.visible=true;cloudBand.visible=true;earth.position.set(0,120,-250);shuttle.position.set(0,210,-120);shuttle.rotation.set(0,Math.PI,0);const eye2=shuttle.localToWorld(new THREE.Vector3(0,1.25,8));const look2=shuttle.localToWorld(new THREE.Vector3(0,1.45,19));camera.position.copy(eye2);camera.lookAt(look2);missionStage=5;setObjective('YÖRÜNGE GÖREVİ: Dünya’yı gözlemle. Uçuş kontrolünden gelen gizemli sinyal mesajını bekle.');updateProgress();showMissionAlert('BÖLÜM 02 — DÜNYA YÖRÜNGESİ');document.getElementById('liveNews').textContent='Yörüngeye ulaşıldı. Derin uzaydan gelen tanımlanamayan sinyal yeniden tespit edildi.';notify('BÖLÜM 02: YÖRÜNGE. Görev kontrol yeni bir sinyal yakaladı.');}}else if(orbitMode){earth.rotation.y+=dt*.025;cloudBand.rotation.y+=dt*.03;const eye=shuttle.localToWorld(new THREE.Vector3(0,1.25,8));const lookAt=shuttle.localToWorld(new THREE.Vector3(0,1.45,19));camera.position.copy(eye);camera.lookAt(lookAt);}
  waypoint.visible=missionStage===1;
  waypoint.rotation.y+=dt*.45;waypointRing.position.y=.35+Math.sin(performance.now()*.004)*.12;
  waypointLight.intensity=missionStage===1?2.5+Math.sin(performance.now()*.006)*.8:0;
