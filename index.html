@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="theme-color" content="#070d18">
+<title>BEYOND EARTH — RAGE GAME</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#070d18;color:#eaf2ff;font-family:Inter,system-ui,Arial}canvas{display:block}
+#boot{position:fixed;inset:0;display:grid;place-items:center;background:radial-gradient(ellipse at 50% 40%,#263c56,#080e19 68%);z-index:10;transition:opacity .8s}
+#boot .panel{text-align:center;padding:34px;max-width:600px;width:90%;border:1px solid #7893b455;background:#081321cc;box-shadow:0 25px 90px #0009;backdrop-filter:blur(12px)}
+.logo{font-size:clamp(34px,7vw,64px);font-weight:900;letter-spacing:.16em;margin:0;text-shadow:0 0 35px #74baff66}.sub{letter-spacing:.32em;color:#8eaccb;font-size:11px;margin:10px 0 32px}
+#start{background:linear-gradient(135deg,#e7f4ff,#85b9e8);border:0;color:#081321;padding:15px 34px;font-weight:900;letter-spacing:.15em;cursor:pointer}
+#hint{font-size:12px;color:#9db1c8;line-height:1.8;margin-top:22px}
+#hud{position:fixed;inset:0;pointer-events:none;display:none}
+.top{position:absolute;top:18px;left:20px;right:20px;display:flex;justify-content:space-between;align-items:flex-start}
+.brand{font-size:13px;font-weight:900;letter-spacing:.22em}.brand small{display:block;color:#8da9c6;font-size:9px;letter-spacing:.28em;margin-top:4px}
+.status{text-align:right;font-size:10px;letter-spacing:.14em;color:#a9c3df;background:#07111dcc;border:1px solid #8db5dc44;padding:10px 14px}
+.cross{position:absolute;left:50%;top:50%;width:5px;height:5px;border:1px solid #d9eeff99;border-radius:50%;transform:translate(-50%,-50%)}
+.bottom{position:absolute;bottom:20px;left:20px;right:20px;display:flex;justify-content:space-between;align-items:end}
+.objective{background:#07111dcc;border-left:2px solid #83bce9;padding:12px 16px;max-width:300px;font-size:11px;color:#b8cce0;line-height:1.6}.objective b{display:block;color:#fff;font-size:10px;letter-spacing:.18em;margin-bottom:4px}
+#prompt{position:absolute;left:50%;bottom:22%;transform:translateX(-50%);background:#06101ddd;border:1px solid #9cc9ee66;padding:10px 16px;font-size:11px;letter-spacing:.1em;display:none}
+#toast{position:absolute;top:22%;left:50%;transform:translateX(-50%);background:#06101de8;border:1px solid #8ab8df66;padding:12px 20px;font-size:12px;display:none;max-width:85%;text-align:center}
+#mobile{display:none;position:absolute;inset:0;pointer-events:none}
+#stick{position:absolute;bottom:35px;left:28px;width:124px;height:124px;border-radius:50%;border:1px solid #c6e4ff66;background:#d5eaff16;pointer-events:auto;touch-action:none}
+#nub{position:absolute;width:48px;height:48px;left:37px;top:37px;border-radius:50%;background:#c5e5ff66;border:1px solid #e4f3ff99}
+#look{position:absolute;right:22px;bottom:30px;width:140px;height:140px;border-radius:50%;border:1px solid #c6e4ff33;pointer-events:auto;touch-action:none}
+#interact{position:absolute;right:38px;bottom:190px;width:64px;height:64px;border-radius:50%;border:1px solid #d9efff88;background:#17304dcc;color:white;font-weight:800;pointer-events:auto}
+@media(max-width:800px),(pointer:coarse){#mobile{display:block}.status{font-size:9px}.bottom{bottom:180px}.objective{max-width:210px;font-size:10px}}
+</style>
+</head>
+<body>
+<div id="boot"><div class="panel"><h1 class="logo">BEYOND EARTH</h1><div class="sub">A NEW FRONTIER BEGINS</div><button id="start">ENTER THE HANGAR</button><div id="hint">W A S D — MOVE &nbsp; • &nbsp; MOUSE — LOOK<br> E — INTERACT &nbsp; • &nbsp; ESC — RELEASE MOUSE<br><br>AN ORIGINAL SPACE STORY BY RAGE GAME</div></div></div>
+<div id="hud">
+ <div class="top"><div class="brand">BEYOND EARTH<small>RAGE GAME // FLIGHT OPERATIONS</small></div><div class="status">JOHNSON SPACE CENTER<br><span style="color:#72d4a6">● FACILITY ONLINE</span> &nbsp; | &nbsp; T-02:14:36</div></div>
+ <div class="cross"></div><div id="prompt">[ E ] INTERACT</div><div id="toast"></div>
+ <div class="bottom"><div class="objective"><b>CURRENT OBJECTIVE</b>Explore the hangar and speak with the flight engineers.</div><div class="status">SUIT STATUS: NOMINAL<br>MISSION: DEEP SPACE INITIATIVE</div></div>
+ <div id="mobile"><div id="stick"><div id="nub"></div></div><div id="look"></div><button id="interact">E</button></div>
+</div>
+<script type="module">
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
+const scene=new THREE.Scene();scene.background=new THREE.Color(0x8296a9);scene.fog=new THREE.Fog(0x8296a9,45,180);
+const camera=new THREE.PerspectiveCamera(72,innerWidth/innerHeight,.1,500);camera.position.set(0,1.72,18);
+const renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance'});renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.12;document.body.appendChild(renderer.domElement);
+scene.add(new THREE.HemisphereLight(0xc9e2ff,0x30313a,2.0));
+const key=new THREE.DirectionalLight(0xffe5c4,3.2);key.position.set(-25,35,20);key.castShadow=true;key.shadow.mapSize.set(2048,2048);key.shadow.camera.left=-70;key.shadow.camera.right=70;key.shadow.camera.top=70;key.shadow.camera.bottom=-70;scene.add(key);
+const fill=new THREE.DirectionalLight(0x8dbfff,1.3);fill.position.set(25,15,-25);scene.add(fill);
+const mat=(color,rough=.7,metal=0)=>new THREE.MeshStandardMaterial({color,roughness:rough,metalness:metal});
+const concrete=mat(0x59616a),wall=mat(0x9aa5ad),dark=mat(0x202a35,.55,.35),steel=mat(0x788b9b,.35,.72),white=mat(0xe5e9e9,.52,.18),black=mat(0x101820,.45,.3),orange=mat(0xe17a2c,.65),glass=new THREE.MeshPhysicalMaterial({color:0x83bce0,metalness:.25,roughness:.12,transparent:true,opacity:.28});
+function box(w,h,d,m,x,y,z,sh=true){const o=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);o.position.set(x,y,z);o.castShadow=sh;o.receiveShadow=true;scene.add(o);return o}
+function cylinder(rt,rb,h,m,x,y,z,seg=24){const o=new THREE.Mesh(new THREE.CylinderGeometry(rt,rb,h,seg),m);o.position.set(x,y,z);o.castShadow=true;o.receiveShadow=true;scene.add(o);return o}
+function beam(a,b,r,m){const d=new THREE.Vector3().subVectors(b,a);const o=new THREE.Mesh(new THREE.CylinderGeometry(r,r,d.length(),8),m);o.position.copy(a).add(b).multiplyScalar(.5);o.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),d.normalize());scene.add(o)}
+// Hangar floor and monumental shell
+box(100,1,110,concrete,0,-.55,-15);
+for(let x=-45;x<=45;x+=5)box(.055,.012,100,mat(0x87919a),x,.012,-15,false);
+for(let z=-65;z<=35;z+=10)box(96,.015,.07,mat(0x87919a),0,.015,z,false);
+box(100,34,2,wall,0,17,-69);box(2,34,110,wall,-49,17,-15);box(2,34,110,wall,49,17,-15);
+box(100,2,110,dark,0,34,-15);
+for(let x=-45;x<=45;x+=15){box(.5,34,.7,steel,x,17,-67);box(.5,34,.7,steel,x,17,37)}
+// roof trusses
+for(let z=-60;z<35;z+=12){beam(new THREE.Vector3(-48,32,z),new THREE.Vector3(48,32,z),.18,steel);beam(new THREE.Vector3(-48,32,z),new THREE.Vector3(0,23,z),.12,steel);beam(new THREE.Vector3(48,32,z),new THREE.Vector3(0,23,z),.12,steel)}
+// massive hangar door and window panes
+box(42,22,1.1,dark,0,13,-67.7);
+for(let x=-19;x<=19;x+=4){box(3.5,17,.25,glass,x,14,-67);box(.14,18,.3,steel,x+1.8,14,-66.8)}
+box(44,1,.6,orange,0,2,-66.5);
+for(let x=-45;x<=45;x+=15){box(8,1.2,.5,black,x,27,-67);}
+// industrial lights
+for(let x=-36;x<=36;x+=12)for(let z=-52;z<=24;z+=19){box(5,.18,1.3,white,x,31,z);const l=new THREE.PointLight(0xd5eaff,38,22);l.position.set(x,29,z);scene.add(l)}
+// gantry and service platforms
+for(const side of [-1,1]){box(3,13,50,steel,side*22,7,-17);box(9,.7,48,dark,side*18,13,-17);for(let z=-38;z<5;z+=8){box(8,.15,.15,orange,side*18,13.5,z)}}
+for(let x=-26;x<=26;x+=13){box(1.2,9,1.2,orange,x,4.5,-30);box(4,.5,4,dark,x,9.2,-30)}
+// shuttle display: fuselage, nose, wings, tail
+const shuttle=new THREE.Group();scene.add(shuttle);shuttle.position.set(0,4,-22);shuttle.rotation.y=Math.PI;
+const fus=new THREE.Mesh(new THREE.CylinderGeometry(2.05,2.5,25,32,1,true),white);fus.rotation.x=Math.PI/2;fus.position.z=0;fus.castShadow=true;shuttle.add(fus);
+const nose=new THREE.Mesh(new THREE.ConeGeometry(2.05,6,32),white);nose.rotation.x=-Math.PI/2;nose.position.z=15.4;nose.castShadow=true;shuttle.add(nose);
+const belly=new THREE.Mesh(new THREE.CylinderGeometry(2.2,2.25,20,32),mat(0x252a30,.8));belly.rotation.x=Math.PI/2;belly.position.z=-1;belly.scale.set(1,.95,1);shuttle.add(belly);
+const wingGeo=new THREE.Shape();wingGeo.moveTo(0,0);wingGeo.lineTo(12,1);wingGeo.lineTo(23,-8);wingGeo.lineTo(5,-7);wingGeo.lineTo(0,0);
+const wing=new THREE.Mesh(new THREE.ExtrudeGeometry(wingGeo,{depth:.45,bevelEnabled:true,bevelSegments:2,steps:1,bevelSize:.15,bevelThickness:.15}),white);wing.position.set(1,1,-4);wing.rotation.x=-.08;wing.castShadow=true;shuttle.add(wing);
+const wing2=wing.clone();wing2.scale.x=-1;wing2.position.x=-1;shuttle.add(wing2);
+const tail=new THREE.Mesh(new THREE.BoxGeometry(.5,6,5),white);tail.position.set(0,4,-8);tail.rotation.x=-.25;shuttle.add(tail);
+for(let x of [-.85,.85]){const pod=new THREE.Mesh(new THREE.CylinderGeometry(.55,.7,13,20),mat(0xb8c1c8,.4,.5));pod.rotation.x=Math.PI/2;pod.position.set(x*2,1,-12);shuttle.add(pod)}
+for(let x of [-1.15,-.38,.38,1.15]){const win=new THREE.Mesh(new THREE.BoxGeometry(.42,.12,.12),black);win.position.set(x,1.3,18.1);shuttle.add(win)}
+const nasaMark=new THREE.Mesh(new THREE.BoxGeometry(3,.04,1.1),mat(0x173e83));nasaMark.position.set(0,2,-2);shuttle.add(nasaMark);
+for(let i=0;i<3;i++){const nozzle=new THREE.Mesh(new THREE.CylinderGeometry(.5,.8,2.8,20),steel);nozzle.rotation.x=Math.PI/2;nozzle.position.set((i-1)*1.25,-1,-13);shuttle.add(nozzle)}
+// access stairs and boarding bridge
+for(let i=0;i<12;i++){box(4,.25,1.1,steel,-7,1+i*.55,-3-i*.8);box(.18,.6,1.1,orange,-9,1.2+i*.55,-3-i*.8);box(.18,.6,1.1,orange,-5,1.2+i*.55,-3-i*.8)}
+box(5,.5,12,dark,-7,8,-8);for(let z=-13;z<-2;z+=2)box(.1,1,.1,steel,-9.5,8.5,z);
+// exterior launch pad, visible beyond hangar door
+const pad=box(48,1,25,mat(0x737d84),0,-.1,-83);for(let x=-18;x<=18;x+=9)box(2,1,2,steel,x,.5,-82);
+cylinder(2,3,34,dark,0,16,-95,24);cylinder(1.5,2,5,white,0,35,-95,24);box(1,10,18,steel,8,22,-95);box(12,.5,1,orange,3,17,-95);
+// control room, mission displays
+box(14,5,1,dark,0,5,25);box(13,3.7,.2,black,0,5.6,24.4);
+function sign(text,x,y,z,color='#9ed6ff'){const c=document.createElement('canvas');c.width=1024;c.height=256;const ctx=c.getContext('2d');ctx.fillStyle='#081523';ctx.fillRect(0,0,1024,256);ctx.strokeStyle='#49718e';ctx.lineWidth=5;ctx.strokeRect(8,8,1008,240);ctx.fillStyle=color;ctx.font='bold 62px Arial';ctx.textAlign='center';ctx.fillText(text,512,150);const t=new THREE.CanvasTexture(c);const m=new THREE.MeshBasicMaterial({map:t});const p=new THREE.Mesh(new THREE.PlaneGeometry(9,2.25),m);p.position.set(x,y,z);scene.add(p)}
+sign('DEEP SPACE INITIATIVE',0,7.2,24.25);sign('FLIGHT OPERATIONS  //  MISSION CONTROL',0,11,24.2,'#f1b77c');
+for(let i=0;i<4;i++){box(2.4,1.1,1.1,dark,-5+i*3.3,1,20);box(2,.08,.05,mat(0x58b9d8),-5+i*3.3,1.8,19.4)}
+// crates, carts, floor details
+for(let i=0;i<12;i++){const x=-38+(i%6)*14,z=10-Math.floor(i/6)*16;box(2.2,2,2, i%3===0?orange:dark,x,1,z);box(2.3,.12,2.3,steel,x,2,z)}
+for(let x of [-15,15]){const cart=box(3,1.1,5,orange,x,.7,9);for(let dx of [-1,1])for(let dz of [-1.8,1.8]){const w=cylinder(.42,.42,.25,black,x+dx,0.42,9+dz,16);w.rotation.z=Math.PI/2}}
+// NPCs: engineer suits, helmets, limbs
+const people=[];
+function person(x,z,shirt=0x354b60){const g=new THREE.Group();scene.add(g);g.position.set(x,0,z);const torso=new THREE.Mesh(new THREE.BoxGeometry(.65,1,.35),mat(shirt));torso.position.y=1.25;g.add(torso);const head=new THREE.Mesh(new THREE.SphereGeometry(.24,16,12),mat(0xd4b69a));head.position.y=1.95;g.add(head);const helmet=new THREE.Mesh(new THREE.SphereGeometry(.29,16,12,0,Math.PI*2,0,Math.PI*.48),mat(0xcbd8e1,.25,.3));helmet.position.y=2.02;g.add(helmet);for(let s of [-1,1]){const arm=new THREE.Mesh(new THREE.BoxGeometry(.2,.8,.22),mat(shirt));arm.position.set(s*.43,1.3,0);arm.rotation.z=s*.12;g.add(arm);const leg=new THREE.Mesh(new THREE.BoxGeometry(.24,.8,.28),dark);leg.position.set(s*.18,.42,0);g.add(leg)}people.push({g,x,z,phase:Math.random()*6});}
+person(-13,4,0x3c6179);person(13,3,0x4b5667);person(-18,-14,0x9a572d);person(17,-18,0x526c5e);person(5,17,0x43556e);person(-4,-34,0x3e6571);
+const player={x:0,z:18,yaw:0,pitch:0};let started=false,locked=false;const keys={};let nearest=null;
+const boot=document.getElementById('boot'),hud=document.getElementById('hud'),prompt=document.getElementById('prompt'),toast=document.getElementById('toast');
+function notify(t){toast.textContent=t;toast.style.display='block';clearTimeout(notify.timer);notify.timer=setTimeout(()=>toast.style.display='none',3200)}
+document.getElementById('start').onclick=()=>{started=true;boot.style.opacity='0';setTimeout(()=>boot.remove(),850);hud.style.display='block';if(innerWidth>800)renderer.domElement.requestPointerLock?.();notify('Welcome aboard. The hangar is yours to explore.');};
+document.addEventListener('pointerlockchange',()=>locked=document.pointerLockElement===renderer.domElement);
+document.addEventListener('mousemove',e=>{if(locked){player.yaw-=e.movementX*.0022;player.pitch=Math.max(-1.25,Math.min(1.25,player.pitch-e.movementY*.0018));}});
+document.addEventListener('keydown',e=>{keys[e.code]=true;if(e.code==='KeyE'&&started)interact();});document.addEventListener('keyup',e=>keys[e.code]=false);
+function interact(){if(nearest){notify(nearest);return}notify('No nearby interaction. Walk closer to a crew member or the shuttle access stairs.')}
+document.getElementById('interact').onclick=interact;
+let stick={x:0,y:0};const st=document.getElementById('stick'),nub=document.getElementById('nub');let stOn=false;
+st.addEventListener('pointerdown',e=>{stOn=true;st.setPointerCapture(e.pointerId);moveStick(e)});st.addEventListener('pointermove',e=>{if(stOn)moveStick(e)});st.addEventListener('pointerup',()=>{stOn=false;stick={x:0,y:0};nub.style.left='37px';nub.style.top='37px'});
+function moveStick(e){const r=st.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2;let x=e.clientX-cx,y=e.clientY-cy,l=Math.hypot(x,y),m=38;if(l>m){x=x/l*m;y=y/l*m}stick={x:x/m,y:y/m};nub.style.left=(37+x)+'px';nub.style.top=(37+y)+'px'}
+const look=document.getElementById('look');let lookOn=false,last={x:0,y:0};look.addEventListener('pointerdown',e=>{lookOn=true;last={x:e.clientX,y:e.clientY};look.setPointerCapture(e.pointerId)});look.addEventListener('pointermove',e=>{if(lookOn){player.yaw-=(e.clientX-last.x)*.006;player.pitch=Math.max(-1.2,Math.min(1.2,player.pitch-(e.clientY-last.y)*.004));last={x:e.clientX,y:e.clientY}}});look.addEventListener('pointerup',()=>lookOn=false);
+function clamp(v,a,b){return Math.max(a,Math.min(b,v))}
+const clock=new THREE.Clock();
+function animate(){requestAnimationFrame(animate);const dt=Math.min(clock.getDelta(),.04);
+ if(started){let f=(keys.KeyW?1:0)-(keys.KeyS?1:0)-stick.y;let s=(keys.KeyD?1:0)-(keys.KeyA?1:0)+stick.x;const len=Math.hypot(f,s);if(len>1){f/=len;s/=len}const speed=keys.ShiftLeft?8:4.2;player.x+= (Math.sin(player.yaw)*f+Math.cos(player.yaw)*s)*speed*dt;player.z+= (Math.cos(player.yaw)*f-Math.sin(player.yaw)*s)*speed*dt;player.x=clamp(player.x,-45,45);player.z=clamp(player.z,-62,31);
+ camera.position.set(player.x,1.72,player.z);camera.rotation.order='YXZ';camera.rotation.y=player.yaw;camera.rotation.x=player.pitch;
+ nearest=null;let best=4;for(let i=0;i<people.length;i++){const p=people[i],d=Math.hypot(p.x-player.x,p.z-player.z);if(d<best){best=d;nearest=['Flight engineer: “The shuttle is almost ready. The mission team is waiting for you.”','Systems specialist: “All primary systems are reading nominal.”','Ground crew: “We are checking the external service connections.”','Mission scientist: “Our destination is beyond anything we have explored.”','Flight controller: “Welcome to the Deep Space Initiative.”','Engineer: “The orbiter is yours to inspect.”'][i]}}
+ const shuttleD=Math.hypot(player.x,player.z+8);if(shuttleD<4)nearest='Shuttle access: “Boarding operations are not yet cleared.”';
+ prompt.style.display=nearest?'block':'none';
+ for(const p of people){p.phase+=dt;p.g.rotation.y=Math.sin(p.phase*.3)*.08}
+ }
+ renderer.render(scene,camera);
+}
+animate();
+addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,2))});
+</script>
+</body></html>
